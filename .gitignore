@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+payrescue_ai/data/payrescue.db
+outputs/*.zip
+.DS_Store
+.env
+
+payrescue_ai/data/synthetic_payment_cases.csv
