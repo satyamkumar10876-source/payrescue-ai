@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PayRescue AI</title>
+    <link rel="stylesheet" href="../static/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Trust-safe revenue recovery</p>
+        <h1>PayRescue AI</h1>
+        <p class="subtitle">Detect late-authorisation and payment-limbo risk before sending retry links.</p>
+      </div>
+      <div class="run-controls">
+        <button id="runAgent">Run Recovery Agent</button>
+        <span id="runStatus">Ready</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="metrics-grid" id="metricsGrid">
+        <div class="metric"><span>Total Cases</span><strong id="total_cases">-</strong></div>
+        <div class="metric"><span>Recovered Revenue</span><strong id="recovered_revenue">-</strong></div>
+        <div class="metric"><span>Revenue Protected</span><strong id="revenue_protected">-</strong></div>
+        <div class="metric"><span>Accuracy</span><strong id="accuracy">-</strong></div>
+        <div class="metric"><span>Precision</span><strong id="recovery_precision">-</strong></div>
+        <div class="metric"><span>Recall</span><strong id="recovery_recall">-</strong></div>
+        <div class="metric"><span>False Positive Cost</span><strong id="false_positive_cost">-</strong></div>
+        <div class="metric"><span>Duplicate Debit Prevented</span><strong id="duplicate_debit_prevented">-</strong></div>
+      </section>
+
+      <section class="run-summary" id="runSummary">
+        <strong>Agent status:</strong>
+        <span>The dashboard auto-loads saved decisions. Click Run Recovery Agent to recompute classifications, metrics, audit logs, and guardrail decisions.</span>
+      </section>
+
+      <section class="panel input-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Add Merchant Payment Case</h2>
+            <p>Simulate how Razorpay would feed payment/webhook signals into the agent.</p>
+          </div>
+        </div>
+        <form id="caseForm" class="case-form">
+          <label>Amount
+            <input name="amount" type="number" value="12499" min="1" required>
+          </label>
+          <label>Method
+            <select name="payment_method">
+              <option>UPI</option>
+              <option>CARD</option>
+              <option>NETBANKING</option>
+              <option>WALLET</option>
+            </select>
+          </label>
+          <label>Bank
+            <select name="bank">
+              <option>HDFC</option>
+              <option>SBI</option>
+              <option>ICICI</option>
+              <option>AXIS</option>
+              <option>KOTAK</option>
+              <option>PNB</option>
+            </select>
+          </label>
+          <label>Status
+            <select name="status">
+              <option>failed</option>
+              <option>pending</option>
+              <option>abandoned</option>
+            </select>
+          </label>
+          <label>Error
+            <select name="error_code">
+              <option>payment_timed_out</option>
+              <option>gateway_no_response</option>
+              <option>bank_unavailable</option>
+              <option>insufficient_funds</option>
+              <option>user_cancelled</option>
+              <option>session_expired</option>
+            </select>
+          </label>
+          <label>Retry Count
+            <input name="retry_count_24h" type="number" value="1" min="0" max="10" required>
+          </label>
+          <label>Checkout Seconds
+            <input name="checkout_duration_seconds" type="number" value="188" min="0" required>
+          </label>
+          <label>Customer
+            <select name="customer_type">
+              <option>repeat</option>
+              <option>new</option>
+            </select>
+          </label>
+          <label class="check"><input name="upi_flow_completed" type="checkbox" checked> UPI/auth flow completed</label>
+          <label class="check"><input name="customer_reported_debit" type="checkbox" checked> Customer reported debit</label>
+          <label class="check"><input name="webhook_received" type="checkbox"> Success webhook received</label>
+          <label class="check"><input name="downtime_active" type="checkbox" checked> Downtime/degradation active</label>
+          <button type="submit">Add Case & Analyze</button>
+        </form>
+      </section>
+
+      <section class="layout">
+        <div class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Recovery Queue</h2>
+              <p>Agent decisions across safe retries, limbo risk, downtime and review cases.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Case</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Class</th>
+                  <th>Decision</th>
+                  <th>Confidence</th>
+                </tr>
+              </thead>
+              <tbody id="decisionRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="panel detail-panel">
+          <h2>Decision Audit</h2>
+          <div id="auditDetail" class="audit-detail">
+            <p>Select a case to inspect why the agent acted or refused to act.</p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Webhook Timeline Simulator</h2>
+            <p>Shows how payment events, delayed webhooks, support signals, and guardrails shape the agent decision.</p>
+          </div>
+        </div>
+        <div id="timeline" class="timeline">
+          <p>Select a case to view its payment lifecycle.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Failure Handling</h2>
+            <p>Unsafe or uncertain money movement is blocked before it reaches the customer.</p>
+          </div>
+        </div>
+        <div class="rules-grid">
+          <div><strong>Confidence &lt; 75%</strong><span>Human review, no automatic retry.</span></div>
+          <div><strong>Possible Debit</strong><span>Retry link blocked, status check scheduled.</span></div>
+          <div><strong>Active Downtime</strong><span>Same-method retry blocked.</span></div>
+          <div><strong>High Value</strong><span>Manual approval required when status is unclear.</span></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="../static/app.js"></script>
+  </body>
+</html>
